@@ -9,6 +9,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 #endif
 
 namespace HoloBot
@@ -96,7 +97,8 @@ namespace HoloBot
         // From the Bot Connector portal, enable the Direct Line channel on your bot
         // Generate and copy your Direct Line secret (aka API key)
         // TO DO: Please use your own key. This one connects to The Maker Show Bot
-        private string _APIKEY = "PN3lBLvTXwU.cwA.Kb8.qA6OkFZcgx2hLRSAlteqKnCZqYcQD_orUi_kwyw6i8k";
+        //private string _APIKEY = "PN3lBLvTXwU.cwA.Kb8.qA6OkFZcgx2hLRSAlteqKnCZqYcQD_orUi_kwyw6i8k";
+
         private string botToken;
         private string activeConversation;
         private string activeWatermark;
@@ -110,6 +112,15 @@ namespace HoloBot
 
         public async Task<string> StartConversation()
         {
+            string token;
+            using (var tokenClient = new HttpClient())
+            {
+                HttpResponseMessage response = await tokenClient.GetAsync("https://bots.sdf.customercareintelligence.net/api/botmanagement/v1/directline/directlinetoken?tenantId=72f988bf-86f1-41af-91ab-2d7cd011db47&botId=23eb669a-77f8-4713-a3e4-baa4ae13eb32");
+                string body = await response.Content.ReadAsStringAsync();
+                JObject tokenObj = JObject.Parse(body);
+                token = tokenObj["token"].Value<string>();
+            }
+
             using (var client = new HttpClient())
             {
                 client.BaseAddress = new Uri("https://directline.botframework.com/");
@@ -117,10 +128,10 @@ namespace HoloBot
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 // Authorize
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _APIKEY);
+                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
 
                 // Get a new token as dummy call
-                var keyreq = new KeyRequest() { Mainkey = "" };
+                var keyreq = ""; //new KeyRequest() { Mainkey = "" };
                 var stringContent = new StringContent(keyreq.ToString());
                 //string path = "v3/directline/conversations";
                 string path = "api/conversations";

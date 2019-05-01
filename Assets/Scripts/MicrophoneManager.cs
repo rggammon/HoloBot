@@ -113,7 +113,7 @@ public class MicrophoneManager : MonoBehaviour, IMixedRealityFocusHandler
     public void OnFocusEnter(FocusEventData eventData)
     {
         // Don't activate speech recognition if the recognizer is already running
-        if (dictationRecognizer.Status != SpeechSystemStatus.Running)
+        if (dictationRecognizer != null && dictationRecognizer.Status != SpeechSystemStatus.Running)
         {
             // Don't activate speech recognition if the speech synthesizer's audio source
             // is still in active playback mode
