@@ -39,7 +39,7 @@ namespace HoloBot
 
     public class ConversationActitvities
     {
-        public Activity[] activities { get; set; }
+        public JObject[] activities { get; set; }
         public string watermark { get; set; }
         public string eTag { get; set; }
     }
@@ -53,6 +53,12 @@ namespace HoloBot
     public class ActivityReference
     {
         public string id { get; set; }
+    }
+
+    public class ChannelData
+    {
+        public string cci_tenant_id { get; set; }
+        public string cci_bot_id { get; set; }
     }
 
     public class Activity
@@ -71,10 +77,7 @@ namespace HoloBot
         public Attachment[] attachments { get; set; }
         public object[] entities { get; set; }
         public string replyToId { get; set; }
-    }
-
-    public class Channeldata
-    {
+        public ChannelData channelData { get; set; }
     }
 
     public class Attachment
@@ -169,7 +172,11 @@ namespace HoloBot
                 {
                     type = "message",
                     from = new UserAccount() { id = "HoloLens User" },
-                    text = message
+                    text = message,
+                    channelData = new ChannelData() { 
+                        cci_tenant_id = "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                        cci_bot_id = "23eb669a-77f8-4713-a3e4-baa4ae13eb32"
+                    }
                 };
 
                 string postBody = JsonConvert.SerializeObject(myMessage);
@@ -196,7 +203,7 @@ namespace HoloBot
             ConversationActitvities cm = await GetNewestActivities();
             if (cm.activities.Length > 0)
             {
-                return cm.activities[cm.activities.Length - 1].text;
+                return (string)cm.activities[cm.activities.Length - 1]["text"];
             }
             else
             {
@@ -215,11 +222,12 @@ namespace HoloBot
                 for (int i = 0; i < cm.activities.Length; i++)
                 {
                     var activity = cm.activities[i];
-                    Debug.Log("activity received = " + activity.text);
-                    lastResponse = activity.id + " / " + activity.replyToId + " / " + newActivityId;
+                    Debug.Log("activity received = " + (string)activity["text"]);
+                    lastResponse = (string)activity["id"] + " / " + (string)activity["replyToId"] + " / " + newActivityId;
 
                     // wait for reply message from my message
-                    if (activity.replyToId != null && activity.replyToId.Equals(newActivityId))
+                    string replyToId = (string)activity["replyToId"];
+                    if (replyToId != null && replyToId.Equals(newActivityId))
                     {
                         Debug.Log("activity is response to " + newActivityId);
                         return cm;
