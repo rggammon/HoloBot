@@ -1,7 +1,9 @@
 ﻿using System;
+#if !WINDOWS_CONSOLE
 using UnityEngine;
+#endif
 
-#if WINDOWS_UWP
+#if WINDOWS_UWP || WINDOWS_CONSOLE
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -16,7 +18,7 @@ namespace HoloBot
 {
     // This block of code won't run in Unity's older version of Mono
     // This can only be run in a UWP device like the HoloLens
-#if WINDOWS_UWP
+#if WINDOWS_UWP || WINDOWS_CONSOLE
     public class Conversation
     {
         public string conversationId { get; set; }
@@ -271,7 +273,7 @@ namespace HoloBot
     }
 #endif
 
-#if !WINDOWS_UWP
+#if !WINDOWS_UWP && !WINDOWS_CONSOLE
 
     /// <summary>
     /// This is an empty shim for the BotService within Unity Mono, otherwise we'd get a
