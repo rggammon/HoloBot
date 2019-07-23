@@ -84,11 +84,16 @@ namespace HoloBot
         public string Mainkey { get; set; }
     }
 
+    public class BotResponseEventArgs
+    {
+        public string Text { get; set; }
+    }
+
     /// <summary>
     /// The main service used to communicate with a Bot via the Bot Connector and the Direct Line Channel.
     /// This can only run in a UWP client.
     /// </summary>
-    public class BotService
+    public class BotService : MonoBehaviour
     {
         // From the Bot Connector portal, enable the Direct Line channel on your bot
         // Generate and copy your Direct Line secret (aka API key)
@@ -100,9 +105,22 @@ namespace HoloBot
         private string newActivityId;
         private string lastResponse;
 
+        public delegate void BotResponseEventHandler(object sender, BotResponseEventArgs e);
+        public event BotResponseEventHandler BotResponseEvent;
+
         public BotService()
         {
             // Constructor
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(2));
+                    BotResponseEvent.Invoke(this, new BotResponseEventArgs() { Text = "Foo" });
+                    await Task.Delay(TimeSpan.FromSeconds(2));
+                    BotResponseEvent.Invoke(this, new BotResponseEventArgs() { Text = "Bar" });
+                }
+            });
         }
 
         public async Task<string> StartConversation()
