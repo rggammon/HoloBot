@@ -61,6 +61,7 @@ namespace HoloBot
     {
         public string cci_tenant_id { get; set; }
         public string cci_bot_id { get; set; }
+        public string enableDiagnostics { get; set; }
     }
 
     public class Activity
@@ -177,7 +178,8 @@ namespace HoloBot
                     text = message,
                     channelData = new ChannelData() { 
                         cci_tenant_id = "72f988bf-86f1-41af-91ab-2d7cd011db47",
-                        cci_bot_id = "23eb669a-77f8-4713-a3e4-baa4ae13eb32"
+                        cci_bot_id = "23eb669a-77f8-4713-a3e4-baa4ae13eb32",
+                        enableDiagnostics = "true"
                     }
                 };
 
