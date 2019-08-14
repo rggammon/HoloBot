@@ -1,11 +1,15 @@
 ﻿using System;
+#if !WINDOWS_CONSOLE
 using UnityEngine;
+#endif
+
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 // The BotService code requires .NET 4.x for the scripting runtime.
 // The Newtonsoft JSON.NET plugin used here requires .NET Standard 2.0
@@ -34,7 +38,7 @@ namespace HoloBot
 
     public class ConversationActitvities
     {
-        public Activity[] activities { get; set; }
+        public JObject[] activities { get; set; }
         public string watermark { get; set; }
         public string eTag { get; set; }
     }
@@ -48,6 +52,13 @@ namespace HoloBot
     public class ActivityReference
     {
         public string id { get; set; }
+    }
+
+    public class ChannelData
+    {
+        public string cci_tenant_id { get; set; }
+        public string cci_bot_id { get; set; }
+        public string enableDiagnostics { get; set; }
     }
 
     public class Activity
@@ -66,10 +77,7 @@ namespace HoloBot
         public Attachment[] attachments { get; set; }
         public object[] entities { get; set; }
         public string replyToId { get; set; }
-    }
-
-    public class Channeldata
-    {
+        public ChannelData channelData { get; set; }
     }
 
     public class Attachment
@@ -92,7 +100,8 @@ namespace HoloBot
         // From the Bot Connector portal, enable the Direct Line channel on your bot
         // Generate and copy your Direct Line secret (aka API key)
         // TO DO: Please use your own key. This one connects to The Maker Show Bot
-        private string _APIKEY = "PN3lBLvTXwU.cwA.Kb8.qA6OkFZcgx2hLRSAlteqKnCZqYcQD_orUi_kwyw6i8k";
+        //private string _APIKEY = "PN3lBLvTXwU.cwA.Kb8.qA6OkFZcgx2hLRSAlteqKnCZqYcQD_orUi_kwyw6i8k";
+
         private string botToken;
         private string activeConversation;
         private string activeWatermark;
@@ -106,6 +115,15 @@ namespace HoloBot
 
         public async Task<string> StartConversation()
         {
+            string token;
+            using (var tokenClient = new HttpClient())
+            {
+                HttpResponseMessage response = await tokenClient.GetAsync("https://bots.sdf.customercareintelligence.net/api/botmanagement/v1/directline/directlinetoken?tenantId=72f988bf-86f1-41af-91ab-2d7cd011db47&botId=23eb669a-77f8-4713-a3e4-baa4ae13eb32");
+                string body = await response.Content.ReadAsStringAsync();
+                JObject tokenObj = JObject.Parse(body);
+                token = (string)tokenObj["token"];
+            }
+
             using (var client = new HttpClient())
             {
                 client.BaseAddress = new Uri("https://directline.botframework.com/");
@@ -113,10 +131,10 @@ namespace HoloBot
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 // Authorize
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + _APIKEY);
+                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
 
                 // Get a new token as dummy call
-                var keyreq = new KeyRequest() { Mainkey = "" };
+                var keyreq = ""; //new KeyRequest() { Mainkey = "" };
                 var stringContent = new StringContent(keyreq.ToString());
                 //string path = "v3/directline/conversations";
                 string path = "api/conversations";
@@ -154,7 +172,13 @@ namespace HoloBot
                 {
                     type = "message",
                     from = new UserAccount() { id = "HoloLens User" },
-                    text = message
+                    text = message,
+                    channelData = new ChannelData()
+                    {
+                        cci_tenant_id = "72f988bf-86f1-41af-91ab-2d7cd011db47",
+                        cci_bot_id = "23eb669a-77f8-4713-a3e4-baa4ae13eb32",
+                        enableDiagnostics = "true"
+                    }
                 };
 
                 string postBody = JsonConvert.SerializeObject(myMessage);
@@ -181,7 +205,7 @@ namespace HoloBot
             ConversationActitvities cm = await GetNewestActivities();
             if (cm.activities.Length > 0)
             {
-                return cm.activities[cm.activities.Length - 1].text;
+                return (string)cm.activities[cm.activities.Length - 1]["text"];
             }
             else
             {
@@ -200,11 +224,12 @@ namespace HoloBot
                 for (int i = 0; i < cm.activities.Length; i++)
                 {
                     var activity = cm.activities[i];
-                    Debug.Log("activity received = " + activity.text);
-                    lastResponse = activity.id + " / " + activity.replyToId + " / " + newActivityId;
+                    Debug.Log("activity received = " + (string)activity["text"]);
+                    lastResponse = (string)activity["id"] + " / " + (string)activity["replyToId"] + " / " + newActivityId;
 
                     // wait for reply message from my message
-                    if (activity.replyToId != null && activity.replyToId.Equals(newActivityId))
+                    string replyToId = (string)activity["replyToId"];
+                    if (replyToId != null && replyToId.Equals(newActivityId))
                     {
                         Debug.Log("activity is response to " + newActivityId);
                         return cm;
@@ -246,6 +271,4 @@ namespace HoloBot
             }
         }
     }
-
 }
-

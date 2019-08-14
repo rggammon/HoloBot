@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
 using System;
+using System.Threading.Tasks;
 #if PLATFORM_ANDROID
 using UnityEngine.Android;
 #endif
@@ -45,6 +46,7 @@ public class SpeechRecognition : MonoBehaviour
 
     // Cognitive Services Speech objects used for Speech Recognition
     private SpeechRecognizer recognizer;
+    private SpeechSynthesizer synthesizer;
     // The current language of origin is locked to English-US in this sample. Change this
     // to another region & language code to use a different origin language.
     // e.g. fr-fr, es-es, etc.
@@ -72,8 +74,8 @@ public class SpeechRecognition : MonoBehaviour
         // Use the inspector fields to manually set these values with your subscription info.
         // If you prefer to manually set your Speech Service API Key and Region in code,
         // then uncomment the two lines below and set the values to your own.
-        //SpeechServiceAPIKey = "YourSubscriptionKey";
-        //SpeechServiceRegion = "YourServiceRegion";
+        SpeechServiceAPIKey = ;
+        SpeechServiceRegion = "westus2";
 
         // Initialize the Bot Framework client before we can send requests in
         await tmsBot.StartConversation();
@@ -179,6 +181,7 @@ public class SpeechRecognition : MonoBehaviour
                 recognizer.SessionStopped += SessionStoppedHandler;
             }
         }
+
         UnityEngine.Debug.LogFormat("CreateSpeechRecognizer exit");
     }
 
@@ -300,6 +303,8 @@ public class SpeechRecognition : MonoBehaviour
         // sends the message to the bot and awaits a response.
         if (await tmsBot.SendMessage(message))
         {
+            await Task.Delay(2000);
+
             ConversationActitvities messages = await tmsBot.GetMessages();
             if (messages.activities.Length > 0)
             {
@@ -311,13 +316,14 @@ public class SpeechRecognition : MonoBehaviour
             {
                 // We focus on the speak tag if the bot was speech-enabled.
                 // Otherwise we'll just speak the default text instead.
-                if (messages.activities[i].speak.Length > 0)
+                var speak = messages.activities[i].Value<string>("speak");
+                if (speak != null && speak.Length > 0)
                 {
-                    result += (messages.activities[i].speak + " ");
+                    result += speak + " ";
                 }
                 else
                 {
-                    result += (messages.activities[i].text + " ");
+                    result += ((string)messages.activities[i].Value<string>("text") + " ");
                 }
             }
         }
