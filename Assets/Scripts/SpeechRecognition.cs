@@ -13,6 +13,11 @@ using UnityEngine.Android;
 #endif
 using HoloBot;
 
+public class TextResponseEventArgs
+{
+    public string Text { get; set; }
+}
+
 /// <summary>
 /// SpeechRecognition class lets the user use Speech-to-Text to convert spoken words
 /// into text strings. There is an optional mode that can be enabled to also translate
@@ -37,6 +42,9 @@ public class SpeechRecognition : MonoBehaviour
     private string errorString = "";
     // Status flag to make sure we don't start more than one reco job at a time
     private bool isRecognizing = false;
+
+    public delegate void TextResponseEventHandler(object sender, TextResponseEventArgs e);
+    public event TextResponseEventHandler TextResponseEvent;
 
     // Speech recognition key, required
     [Tooltip("Connection string to Cognitive Services Speech.")]
@@ -323,13 +331,16 @@ public class SpeechRecognition : MonoBehaviour
                 }
                 else
                 {
-                    result += ((string)messages.activities[i].Value<string>("text") + " ");
+                    result += (messages.activities[i].Value<string>("text") + " ");
                 }
             }
         }
 
         //animator.Play("Happy");
         recognizedString = result;
+
+        TextResponseEvent.Invoke(this, new TextResponseEventArgs() { Text = result });
+
         // Use Text-to Speech to respond to the user
         UnityDispatcher.InvokeOnAppThread(() => { UpdateUI(); });
         speechTTS.SpeakWithSDKPlugin(result);

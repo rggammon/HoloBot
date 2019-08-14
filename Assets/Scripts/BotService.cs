@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Net;
 
 // The BotService code requires .NET 4.x for the scripting runtime.
 // The Newtonsoft JSON.NET plugin used here requires .NET Standard 2.0
@@ -115,8 +116,11 @@ namespace HoloBot
 
         public async Task<string> StartConversation()
         {
+            var handler = new HttpClientHandler();
+            handler.Proxy = WebRequest.GetSystemWebProxy();
+
             string token;
-            using (var tokenClient = new HttpClient())
+            using (var tokenClient = new HttpClient(handler))
             {
                 HttpResponseMessage response = await tokenClient.GetAsync("https://bots.sdf.customercareintelligence.net/api/botmanagement/v1/directline/directlinetoken?tenantId=72f988bf-86f1-41af-91ab-2d7cd011db47&botId=23eb669a-77f8-4713-a3e4-baa4ae13eb32");
                 string body = await response.Content.ReadAsStringAsync();
@@ -124,7 +128,7 @@ namespace HoloBot
                 token = (string)tokenObj["token"];
             }
 
-            using (var client = new HttpClient())
+            using (var client = new HttpClient(handler))
             {
                 client.BaseAddress = new Uri("https://directline.botframework.com/");
                 client.DefaultRequestHeaders.Accept.Clear();
@@ -145,6 +149,9 @@ namespace HoloBot
                     var myConversation = JsonConvert.DeserializeObject<Conversation>(re);
                     activeConversation = myConversation.conversationId;
                     botToken = myConversation.token;
+
+                    await SendMessage("Hello");
+
                     return myConversation.conversationId;
                 }
             }
@@ -153,7 +160,10 @@ namespace HoloBot
 
         public async Task<bool> SendMessage(string message)
         {
-            using (var client = new HttpClient())
+            var handler = new HttpClientHandler();
+            handler.Proxy = WebRequest.GetSystemWebProxy();
+
+            using (var client = new HttpClient(handler))
             {
                 string conversationId = activeConversation;
 
@@ -243,7 +253,10 @@ namespace HoloBot
 
         public async Task<ConversationActitvities> GetMessages()
         {
-            using (var client = new HttpClient())
+            var handler = new HttpClientHandler();
+            handler.Proxy = WebRequest.GetSystemWebProxy();
+
+            using (var client = new HttpClient(handler))
             {
                 string conversationId = activeConversation;
 
